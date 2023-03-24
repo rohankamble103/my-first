@@ -1,0 +1,52 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - block:
+# Installing httpd from yum4 (dnf)
+
+        - name: Installing on RedHat
+          dnf: name=httpd state=present
+          tags: installation
+
+# starting the service after installation
+
+        - name: Service
+          service: name=httpd state=started
+          tags: service_start
+      when: ansible_os_family == "RedHat"
+
+# Installing Apache2 on Debian
+
+    - block:
+        - name: Installing Package on Debian
+          apt: name=apache2 state=present
+          tags: Installation_2
+
+# Starting the service after installation
+
+        - name: Service Deb
+          service: name=apache2 state=started
+          tags: Service_Started
+      when: ansible_os_family == "Debian"
+
+# deploying directly from my git repository
+
+    - name: deploying from Git
+      git:
+        repo: https://github.com/rohankamble103/Files.git
+        dest: /var/www/html/
+        force: yes
+      notify: Service Redhat2
+      notify: Service deb2
+      tags: Deploy
+
+# using handlers to restart the apache2 and httpd if any changes occurs
+  handlers:
+        - name: Service Redhat2
+          service: name=httpd state=restarted
+          when: ansible_os_family == "RedHat"
+
+        - name: Service deb2
+          service: name=apache2 state=restarted
+          when: ansible_os_family == "Debian"
